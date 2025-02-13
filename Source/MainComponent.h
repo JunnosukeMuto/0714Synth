@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "NoteState.h"
 
 // range of note number is 0 ~ 127
 #define NUM_OF_MIDI_NOTES 128
@@ -33,17 +34,20 @@ private:
     //==============================================================================
     // Your private member variables go here...
 
-    juce::Slider gainSlider;
-    juce::Label  gainSliderLabel;
+    juce::Slider volumeSlider;
+    juce::Label  volumeSliderLabel;
 
     juce::AudioDeviceManager deviceManager;
     juce::String currentDeviceId;
 
     // 0.0 ~ 1.0
-    float gain = 0.0f;
+    float volume = 0.0f;
 
-    // midiNoteAmplitude[noteNumber] returns amplitude of note
-    float midiNoteAmplitude[NUM_OF_MIDI_NOTES] = {};
+    float midiNoteVelocity[NUM_OF_MIDI_NOTES] = {};
+
+    NoteState midiNoteState[NUM_OF_MIDI_NOTES] = {};
+
+    int midiNoteTimer[NUM_OF_MIDI_NOTES] = {};
 
     // radians
     double midiNoteCurrentAngle[NUM_OF_MIDI_NOTES] = {};
@@ -51,8 +55,27 @@ private:
     // radians per sample
     double midiNoteAngleDeltaTable[NUM_OF_MIDI_NOTES] = {};
 
-    // returns true during the sustain pedal is held down
-    bool isSustainHeldDown = false;
+    bool isPedal = false;
+
+    int pedalOffTime[NUM_OF_MIDI_NOTES] = {};
+
+    float previousVolume[NUM_OF_MIDI_NOTES] = {};
+
+    int attackSamples = 500;
+
+    int holdSamples = 10;
+
+    int decaySamples = 100;
+
+    float sustainVolume = 0.2;
+    
+    int releaseSamples = 1000;
+
+    int pedalSamples = 120000;
+
+    double sampleRate = 0;
+
+    //float clippingVolume = 1.0;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
