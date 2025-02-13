@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "NoteState.h"
+#include "Oscillator.h"
 
 // range of note number is 0 ~ 127
 #define NUM_OF_MIDI_NOTES 128
@@ -37,11 +38,17 @@ private:
     juce::Slider volumeSlider;
     juce::Label  volumeSliderLabel;
 
+    juce::Slider gainSlider;
+    juce::Label  gainSliderLabel;
+
     juce::AudioDeviceManager deviceManager;
     juce::String currentDeviceId;
 
-    // 0.0 ~ 1.0
-    float volume = 0.0f;
+    Oscillator* oscillator;
+
+    float gain = 1;
+
+    float volume = 0;
 
     float midiNoteVelocity[NUM_OF_MIDI_NOTES] = {};
 
@@ -67,15 +74,13 @@ private:
 
     int decaySamples = 100;
 
-    float sustainVolume = 0.2;
+    float sustainVolume = 0.5;
     
     int releaseSamples = 1000;
 
     int pedalSamples = 120000;
 
     double sampleRate = 0;
-
-    //float clippingVolume = 1.0;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

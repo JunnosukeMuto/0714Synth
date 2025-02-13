@@ -1,8 +1,11 @@
 #include "MainComponent.h"
+#include "Oscillator.h"
 
 //==============================================================================
 MainComponent::MainComponent()
 {
+    oscillator = new Oscillator();
+
     // add callback of all midi devices
     deviceManager.addMidiInputDeviceCallback("", this);
 
@@ -13,18 +16,31 @@ MainComponent::MainComponent()
     }
 
     //==========================================================================
+    // gain Slider
+    addAndMakeVisible(gainSlider);
+    gainSlider.setRange(1, 10);
+    gainSlider.setSkewFactorFromMidPoint(3.16);
+    gainSlider.onValueChange = [this]
+        {
+            gain = gainSlider.getValue();
+            oscillator->setGain(gain);
+        };
+    gainSlider.setValue(gain);
+
+    addAndMakeVisible(gainSliderLabel);
+    gainSliderLabel.setText("gain", juce::dontSendNotification);
+
+    //==========================================================================
     // volume Slider
     addAndMakeVisible(volumeSlider);
     volumeSlider.setRange(0, 1);
-    volumeSlider.setSkewFactorFromMidPoint(0.1);
+    volumeSlider.setSkewFactorFromMidPoint(0.3);
     volumeSlider.onValueChange = [this]
         {
             volume = volumeSlider.getValue();
         };
     volumeSlider.setValue(volume);
 
-    //==========================================================================
-    // volume slider label
     addAndMakeVisible(volumeSliderLabel);
     volumeSliderLabel.setText("volume", juce::dontSendNotification);
 
@@ -101,16 +117,16 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
             if (midiNoteState[i] == NoteState::On) {
 
                 if (midiNoteTimer[i] < attackSamples) {
-                    currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * (previousVolume[i] + (float)midiNoteTimer[i] / attackSamples * (1 - previousVolume[i]));
+                    currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * (previousVolume[i] + (float)midiNoteTimer[i] / attackSamples * (1 - previousVolume[i]));
                 }
                 else if (midiNoteTimer[i] < attackSamples + holdSamples) {
-                    currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i];
+                    currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i];
                 }
                 else if (midiNoteTimer[i] < attackSamples + holdSamples + decaySamples) {
-                    currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * (1 + (float)(sustainVolume - 1) / decaySamples * (midiNoteTimer[i] - attackSamples - holdSamples));
+                    currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * (1 + (float)(sustainVolume - 1) / decaySamples * (midiNoteTimer[i] - attackSamples - holdSamples));
                 }
                 else {
-                    currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * sustainVolume;
+                    currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * sustainVolume;
                 }
 
                 midiNoteCurrentAngle[i] += midiNoteAngleDeltaTable[i];
@@ -119,21 +135,21 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
             else if (midiNoteState[i] == NoteState::Off && midiNoteTimer[i] < releaseSamples) {
 
                 previousVolume[i] = sustainVolume * (1 - (float)midiNoteTimer[i] / releaseSamples);
-                currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
+                currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
                 midiNoteCurrentAngle[i] += midiNoteAngleDeltaTable[i];
 
             }
             else if (midiNoteState[i] == NoteState::Pedal && midiNoteTimer[i] < pedalSamples) {
 
                 previousVolume[i] = sustainVolume * (1 - sqrtf((float)midiNoteTimer[i] / pedalSamples));
-                currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
+                currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
                 midiNoteCurrentAngle[i] += midiNoteAngleDeltaTable[i];
 
             }
             else if (midiNoteState[i] == NoteState::PedalOff && midiNoteTimer[i] < releaseSamples && previousVolume[i] != 0) {
 
                 previousVolume[i] = sustainVolume * (1 - sqrtf((float)pedalOffTime[i] / pedalSamples)) * (1 - (float)midiNoteTimer[i] / releaseSamples);
-                currentSample += (float)std::sin(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
+                currentSample += oscillator->currentOscillator(midiNoteCurrentAngle[i]) * midiNoteVelocity[i] * previousVolume[i];
                 midiNoteCurrentAngle[i] += midiNoteAngleDeltaTable[i];
 
             }
@@ -146,13 +162,6 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
 
             midiNoteTimer[i]++;
         }
-
-        //if (currentSample > clippingVolume) {
-        //    currentSample = clippingVolume;
-        //}
-        //else if (currentSample < -clippingVolume) {
-        //    currentSample = -clippingVolume;
-        //}
 
         leftBuffer[sample] = currentSample * volume;
         rightBuffer[sample] = currentSample * volume;
@@ -188,6 +197,9 @@ void MainComponent::resized()
 
     volumeSliderLabel.setBounds(labelArea.removeFromTop(40));
     volumeSlider.setBounds(area.removeFromTop(40));
+
+    gainSliderLabel.setBounds(labelArea.removeFromTop(40));
+    gainSlider.setBounds(area.removeFromTop(40));
 
 }
 

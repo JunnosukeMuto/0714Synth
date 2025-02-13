@@ -4,10 +4,13 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="EQ52lh" name="0714Synth">
     <GROUP id="{2E27A136-A0D1-E4BD-C4AF-51B7C0AB2F0E}" name="Source">
+      <FILE id="lgPLnC" name="Oscillator.cpp" compile="1" resource="0" file="Source/Oscillator.cpp"/>
       <FILE id="ueLoMB" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="lYX7x1" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="BSgZnE" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="yntWHN" name="NoteState.h" compile="0" resource="0" file="Source/NoteState.h"/>
+      <FILE id="Gk8Yyo" name="Oscillator.h" compile="0" resource="0" file="Source/Oscillator.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
